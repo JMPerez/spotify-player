@@ -23,10 +23,10 @@ class SpotifyPlayer {
             this.loggedIn = true;
             this.fetchUser().then(user => {
                 this.dispatch('login', user);
-                    setInterval(loop.bind(this), 1500);
-                    loop();
-                });
+                setInterval(loop.bind(this), 1500);
+                loop();
             });
+        });
     }
 
     login() {
@@ -84,7 +84,7 @@ class SpotifyPlayer {
     }
 
     dispatch(topic, data) {
-        const listeners = this.listeners['topic'];
+        const listeners = this.listeners[topic];
         if (listeners) {
             listeners.forEach(listener => {
                 listener.call(null, data);
