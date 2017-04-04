@@ -26,7 +26,7 @@ class SpotifyPlayer {
     login() {
         return new Promise((resolve, reject) => {
             const CLIENT_ID = '37f5082d5ee1489db5cceeaaef7b9691';
-            const REDIRECT_URI = 'http://localhost:8080/callback.html'; // should point to heroku
+            const REDIRECT_URI = 'https://jmperezperez.com/spotify-player/public/callback.html';
             const getLoginURL = (scopes) => {
                 return 'https://accounts.spotify.com/authorize?client_id=' + CLIENT_ID +
                 '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
