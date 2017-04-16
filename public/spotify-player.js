@@ -1,94 +1,177 @@
 class SpotifyPlayer {
-    constructor(options = {}) {
-        this.options = options;
-        this.listeners = {};
-        this.accessToken = null;
-        this.loggedIn = false;
-    }
+  constructor(options = {}) {
+    this.options = options;
+    this.listeners = {};
+    this.accessToken = null;
+    this.exchangeHost = options.exchangeHost || 'https://spotify-player.herokuapp.com';
+    this.obtainingToken = false;
+    this.loopInterval = null;
+  }
 
-    on(eventType, callback) {
-        this.listeners[eventType] = this.listeners[eventType] || [];
-        this.listeners[eventType].push(callback);
-    }
+  on(eventType, callback) {
+    this.listeners[eventType] = this.listeners[eventType] || [];
+    this.listeners[eventType].push(callback);
+  }
 
-    init() {
-        const loop = () => {
-            this.fetchPlayer().then(data => {
+  dispatch(topic, data) {
+    const listeners = this.listeners[topic];
+    if (listeners) {
+      listeners.forEach(listener => {
+        listener.call(null, data);
+      });
+    }
+  }
+
+  init() {
+    this.fetchToken().then(r => r.json()).then(json => {
+      this.accessToken = json['access_token'];
+      this.expiresIn = json['expires_in'];
+      this._onNewAccessToken();
+    });
+  }
+
+  fetchToken() {
+    this.obtainingToken = true;
+    return fetch(`${this.exchangeHost}/token`, {
+      method: 'POST',
+      body: JSON.stringify({
+        refresh_token: localStorage.getItem('refreshToken')
+      }),
+      headers: new Headers({
+        'Content-Type': 'application/json'
+      })
+    }).then(response => {
+      this.obtainingToken = false;
+      return response;
+    }).catch(e => {
+      console.error(e);
+    });
+  }
+
+  _onNewAccessToken() {
+    if (this.accessToken === '') {
+      console.log('Got empty access token, log out');
+      this.dispatch('login', null);
+      this.logout();
+    } else {
+      const loop = () => {
+        if (!this.obtainingToken) {
+          this.fetchPlayer()
+            .then(data => {
+              if (data !== null) {
                 this.dispatch('update', data);
-            });
-        };
-
-        return this.login().then(accessToken => {
-            this.accessToken = accessToken;
-            this.loggedIn = true;
-            this.fetchUser().then(user => {
-                this.dispatch('login', user);
-                setInterval(loop.bind(this), 1500);
-                loop();
-            });
-        });
-    }
-
-    login() {
-        return new Promise((resolve, reject) => {
-            const CLIENT_ID = '37f5082d5ee1489db5cceeaaef7b9691';
-            const REDIRECT_URI = 'https://jmperezperez.com/spotify-player/public/callback.html';
-            const getLoginURL = (scopes) => {
-                return 'https://accounts.spotify.com/authorize?client_id=' + CLIENT_ID +
-                '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
-                '&scope=' + encodeURIComponent(scopes.join(' ')) +
-                '&response_type=token';
-            };
-
-            const url = getLoginURL([
-                'user-read-playback-state'
-            ]);
-
-            const width = 450,
-                height = 730,
-                left = (screen.width / 2) - (width / 2),
-                top = (screen.height / 2) - (height / 2);
-
-            window.addEventListener('message', function(event) {
-                const hash = JSON.parse(event.data);
-                if (hash.type == 'access_token') {
-                    resolve(hash.access_token);
-                }
-            }, false);
-
-            const w = window.open(url,
-                'Spotify',
-                'menubar=no,location=no,resizable=no,scrollbars=no,status=no, width=' + width + ', height=' + height + ', top=' + top + ', left=' + left
-                );
-        });
-    }
-
-    getAccessToken() {
-        return this.accessToken;
-    }
-
-    fetchGeneric(url) {
-        return fetch(url, {
-            headers: { 'Authorization': 'Bearer ' + this.accessToken }
-        });
-    }
-
-    fetchPlayer() {
-        return this.fetchGeneric('https://api.spotify.com/v1/me/player')
-            .then(data => data.json())
-    }
-
-    fetchUser() {
-        return this.fetchGeneric('https://api.spotify.com/v1/me')
-            .then(data => data.json())
-    }
-
-    dispatch(topic, data) {
-        const listeners = this.listeners[topic];
-        if (listeners) {
-            listeners.forEach(listener => {
-                listener.call(null, data);
+              }
+            })
+            .catch(e => {
+              console.log('Logging user out due to error', e);
+              this.logout();
             });
         }
+      };
+      this.fetchUser().then(user => {
+        this.dispatch('login', user);
+        this.loopInterval = setInterval(loop.bind(this), 1500);
+        loop();
+      });
     }
+  }
+
+  logout() {
+    // clear loop interval
+    if (this.loopInterval !== null) {
+      clearInterval(this.loopInterval);
+      this.loopInterval = null;
+    }
+    this.accessToken = null;
+  }
+
+  login() {
+    return new Promise((resolve, reject) => {
+      const getLoginURL = scopes => {
+        return `${this.exchangeHost}/login?scope=${encodeURIComponent(scopes.join(' '))}`;
+      };
+
+      const url = getLoginURL(['user-read-playback-state']);
+
+      const width = 450, height = 730, left = screen.width / 2 - width / 2, top = screen.height / 2 - height / 2;
+
+      window.addEventListener(
+        'message',
+        event => {
+          const hash = JSON.parse(event.data);
+          if (hash.type == 'access_token') {
+            this.accessToken = hash.access_token;
+            this.expiresIn = hash.expires_in;
+            this._onNewAccessToken();
+            if (this.accessToken === '') {
+              reject();
+            } else {
+              const refreshToken = hash.refresh_token;
+              localStorage.setItem('refreshToken', refreshToken);
+              resolve(hash.access_token);
+            }
+          }
+        },
+        false
+      );
+
+      const w = window.open(
+        url,
+        'Spotify',
+        'menubar=no,location=no,resizable=no,scrollbars=no,status=no, width=' +
+          width +
+          ', height=' +
+          height +
+          ', top=' +
+          top +
+          ', left=' +
+          left
+      );
+    });
+  }
+
+  getAccessToken() {
+    return this.accessToken;
+  }
+
+  fetchGeneric(url) {
+    return fetch(url, {
+      headers: { Authorization: 'Bearer ' + this.accessToken }
+    });
+  }
+
+  fetchPlayer() {
+    return this.fetchGeneric('https://api.spotify.com/v1/me/player').then(response => {
+      if (response.status === 401) {
+        return this.fetchToken()
+          .then(tokenResponse => {
+            console.log('fetchPlayer => fetchToken with result', tokenResponse);
+            if (tokenResponse.status === 200) {
+              console.log('fetchPlayer => fetchToken returning', tokenResponse);
+              return tokenResponse.json();
+            } else {
+              console.error('fetchPlayer => fetchToken with status code different than 200', tokenResponse);
+              throw 'Could not refresh token';
+            }
+          })
+          .then(json => {
+            console.log('fetchPlayer => fetchToken got json', json);
+            this.accessToken = json['access_token'];
+            this.expiresIn = json['expires_in'];
+            console.log('fetchPlayer => fetchToken calling fetchPlayer again', this.fetchPlayer);
+            return this.fetchPlayer();
+          });
+      } else if (response.status >= 500) {
+        // assume an error on Spotify's site
+        console.error('Got error when fetching player', response);
+        return null;
+      } else {
+        return response.json();
+      }
+    });
+  }
+
+  fetchUser() {
+    return this.fetchGeneric('https://api.spotify.com/v1/me').then(data => data.json());
+  }
 }
