@@ -1,6 +1,6 @@
 # Spotify Player
 
-A server plus a light library to create integrations with the [Spotify Web API Connect endpoints](https://developer.spotify.com/web-api/web-api-connect-endpoint-reference/).
+A node.js server plus a light JS library to create integrations with the [Spotify Web API Connect endpoints](https://developer.spotify.com/web-api/web-api-connect-endpoint-reference/).
 
 ## Using the library
 
@@ -37,7 +37,11 @@ The library uses a shared server to issue the initial access token and refreshed
 
 ## Server
 
-The server can be run locally and also deployed to Heroku.
+The server can be run locally and also deployed to Heroku. You will need to register your own Spotify app and pass the credentials to the server. For that:
+
+1. Create an application on [Spotify's Developer Site](https://developer.spotify.com/my-applications/).
+2. Add as redirect uris both `http://localhost:5000/callback` (for development) and `<production_domain>/callback` (if you want to deploy your app somewhere)
+3. Keep the client ID and client secret somewhere. You'll need them next.
 
 ### Running Locally
 
@@ -45,7 +49,7 @@ Make sure you have [Node.js](http://nodejs.org/).
 
 ```sh
 $ npm install
-$ npm start
+$ CLIENT_ID=<your_client_id> CLIENT_SECRET=<your_client_secret> REDIRECT_URI=<your_redirect_uri> npm start
 ```
 
 Your app should now be running on [localhost:5000](http://localhost:5000/).
@@ -62,3 +66,9 @@ $ heroku open
 or
 
 [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+
+You will then need to set the environment variables [using `heroku config:set`](https://devcenter.heroku.com/articles/nodejs-support#environment-variables):
+```
+$ heroku config:set CLIENT_ID=<your_client_id>
+$ heroku config:set CLIENT_SECRET=<your_client_secret>
+$ heroku config:set REDIRECT_URI=<your_redirect_uri>
