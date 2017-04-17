@@ -1,16 +1,49 @@
-# node-js-getting-started
+# Spotify Player
 
-A barebones Node.js app using [Express 4](http://expressjs.com/).
+A server plus a light library to create integrations with the [Spotify Web API Connect endpoints](https://developer.spotify.com/web-api/web-api-connect-endpoint-reference/).
 
-This application supports the [Getting Started with Node on Heroku](https://devcenter.heroku.com/articles/getting-started-with-nodejs) article - check it out.
+## Using the library
 
-## Running Locally
+Import the script `https://spotify-player.herokuapp.com/spotify-player.js`. Now you can log the user in and listen to updates on playback:
 
-Make sure you have [Node.js](http://nodejs.org/) and the [Heroku CLI](https://cli.heroku.com/) installed.
+```js
+var spotifyPlayer = new SpotifyPlayer();
+
+spotifyPlayer.on('update', response => {
+  // response is a json object obtained as a response of
+  // https://developer.spotify.com/web-api/get-information-about-the-users-current-playback/
+});
+
+spotifyPlayer.on('login', user => {
+  if (user === null) {
+    // there is no user logged in or the user was logged out
+  } else {
+    // the user is logged in
+    // user is a json object obtained as a response of
+    // https://developer.spotify.com/web-api/get-current-users-profile/
+  }
+});
+
+loginButton.addEventListener('click', () => {
+    spotifyPlayer.login();
+});
+
+spotifyPlayer.init();
+```
+
+Have a look at http://codepen.io/jmperez/pen/MmwObE for an example of a visualization using this library.
+
+The library uses a shared server to issue the initial access token and refreshed tokens. This means your integration could reach Spotify's rate limits easily. If you want to have more control on this, deploy the code to your own server using the following instructions.
+
+## Server
+
+The server can be run locally and also deployed to Heroku.
+
+### Running Locally
+
+Make sure you have [Node.js](http://nodejs.org/).
 
 ```sh
-$ git clone git@github.com:heroku/node-js-getting-started.git # or clone your own fork
-$ cd node-js-getting-started
 $ npm install
 $ npm start
 ```
@@ -19,6 +52,8 @@ Your app should now be running on [localhost:5000](http://localhost:5000/).
 
 ## Deploying to Heroku
 
+You will need to have the [Heroku CLI](https://cli.heroku.com/) installed.
+ 
 ```
 $ heroku create
 $ git push heroku master
@@ -27,13 +62,3 @@ $ heroku open
 or
 
 [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
-
-## Documentation
-
-For more information about using Node.js on Heroku, see these Dev Center articles:
-
-- [Getting Started with Node.js on Heroku](https://devcenter.heroku.com/articles/getting-started-with-nodejs)
-- [Heroku Node.js Support](https://devcenter.heroku.com/articles/nodejs-support)
-- [Node.js on Heroku](https://devcenter.heroku.com/categories/nodejs)
-- [Best Practices for Node.js Development](https://devcenter.heroku.com/articles/node-best-practices)
-- [Using WebSockets on Heroku with Node.js](https://devcenter.heroku.com/articles/node-websockets)
