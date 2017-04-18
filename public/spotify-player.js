@@ -83,6 +83,7 @@ class SpotifyPlayer {
       this.loopInterval = null;
     }
     this.accessToken = null;
+    this.dispatch('login', null);
   }
 
   login() {
@@ -130,10 +131,6 @@ class SpotifyPlayer {
     });
   }
 
-  getAccessToken() {
-    return this.accessToken;
-  }
-
   fetchGeneric(url) {
     return fetch(url, {
       headers: { Authorization: 'Bearer ' + this.accessToken }
@@ -145,20 +142,15 @@ class SpotifyPlayer {
       if (response.status === 401) {
         return this.fetchToken()
           .then(tokenResponse => {
-            console.log('fetchPlayer => fetchToken with result', tokenResponse);
             if (tokenResponse.status === 200) {
-              console.log('fetchPlayer => fetchToken returning', tokenResponse);
               return tokenResponse.json();
             } else {
-              console.error('fetchPlayer => fetchToken with status code different than 200', tokenResponse);
               throw 'Could not refresh token';
             }
           })
           .then(json => {
-            console.log('fetchPlayer => fetchToken got json', json);
             this.accessToken = json['access_token'];
             this.expiresIn = json['expires_in'];
-            console.log('fetchPlayer => fetchToken calling fetchPlayer again', this.fetchPlayer);
             return this.fetchPlayer();
           });
       } else if (response.status >= 500) {
