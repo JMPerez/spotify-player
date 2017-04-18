@@ -165,6 +165,10 @@ class SpotifyPlayer {
         // assume an error on Spotify's site
         console.error('Got error when fetching player', response);
         return null;
+      } else if (response.status === 404) {
+        // Spotify returns 404 when a free user plays a track
+        console.error('Got 404 when fetching player', response);
+        return null;
       } else {
         return response.json();
       }
