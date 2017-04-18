@@ -28,6 +28,10 @@ loginButton.addEventListener('click', () => {
     spotifyPlayer.login();
 });
 
+logoutButton.addEventListener('click', () => {
+    spotifyPlayer.logout();
+});
+
 spotifyPlayer.init();
 ```
 
