@@ -58,7 +58,7 @@ class SpotifyPlayer {
         if (!this.obtainingToken) {
           this.fetchPlayer()
             .then(data => {
-              if (data !== null) {
+              if (data !== null && data.item !== null) {
                 this.dispatch('update', data);
               }
             })
@@ -156,10 +156,6 @@ class SpotifyPlayer {
       } else if (response.status >= 500) {
         // assume an error on Spotify's site
         console.error('Got error when fetching player', response);
-        return null;
-      } else if (response.status === 404) {
-        // Spotify returns 404 when a free user plays a track
-        console.error('Got 404 when fetching player', response);
         return null;
       } else {
         return response.json();
