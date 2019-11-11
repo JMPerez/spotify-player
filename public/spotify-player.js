@@ -162,9 +162,6 @@ class SpotifyPlayer {
         // assume an error on Spotify's site
         console.error('Got error when fetching player', response);
         return null;
-      } else if (response.status === 204) {
-        // No song playing, or account in private mode
-        return Promise.resolve(null);
       } else {
         return response.json();
       }
