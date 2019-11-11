@@ -96,6 +96,11 @@ class SpotifyPlayer {
 
       const width = 450, height = 730, left = screen.width / 2 - width / 2, top = screen.height / 2 - height / 2;
 
+      const eventOptions = {
+        once: true,
+        capture: false
+      };
+
       window.addEventListener(
         'message',
         event => {
@@ -113,7 +118,7 @@ class SpotifyPlayer {
             }
           }
         },
-        false
+        eventOptions
       );
 
       const w = window.open(
@@ -157,6 +162,9 @@ class SpotifyPlayer {
         // assume an error on Spotify's site
         console.error('Got error when fetching player', response);
         return null;
+      } else if (response.status === 204) {
+        // No song playing, or account in private mode
+        return Promise.resolve(null);
       } else {
         return response.json();
       }
