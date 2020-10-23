@@ -1,6 +1,6 @@
 # Spotify Player
 
-A node.js server plus a light JS library to create integrations with the [Spotify Web API Connect endpoints](https://developer.spotify.com/web-api/web-api-connect-endpoint-reference/).
+A Node.js server plus a light JS library to create integrations with the [Spotify Web API Connect endpoints](https://developer.spotify.com/web-api/web-api-connect-endpoint-reference/).
 
 ## Using the library
 
