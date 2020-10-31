@@ -58,9 +58,7 @@ class SpotifyPlayer {
         if (!this.obtainingToken) {
           this.fetchPlayer()
             .then(data => {
-              if (data !== null && data.item !== null) {
-                this.dispatch('update', data);
-              }
+              this.dispatch('update', data);
             })
             .catch(e => {
               console.log('Logging user out due to error', e);
@@ -96,6 +94,11 @@ class SpotifyPlayer {
 
       const width = 450, height = 730, left = screen.width / 2 - width / 2, top = screen.height / 2 - height / 2;
 
+      const eventOptions = {
+        once: true,
+        capture: false
+      };
+
       window.addEventListener(
         'message',
         event => {
@@ -113,7 +116,7 @@ class SpotifyPlayer {
             }
           }
         },
-        false
+        eventOptions
       );
 
       const w = window.open(
@@ -157,6 +160,17 @@ class SpotifyPlayer {
         // assume an error on Spotify's site
         console.error('Got error when fetching player', response);
         return null;
+      } else if (response.status === 204) {
+        // No song playing, or account in private mode
+        return response.json()
+        .then(json => {
+          // Account in private mode, json = {}
+          return Promise.resolve(json);
+        })
+        .catch(err => {
+          // No song playing, empty response
+          return Promise.resolve(null);
+        });
       } else {
         return response.json();
       }
